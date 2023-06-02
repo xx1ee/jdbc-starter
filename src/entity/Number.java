@@ -1,12 +1,12 @@
 package entity;
 
 public class Number {
-    private Long numbers_id;
+    private Long numbersId;
     private Long number;
     private String description;
 
-    public Number(Long numbers_id, Long number, String description) {
-        this.numbers_id = numbers_id;
+    public Number(Long numbersId, Long number, String description) {
+        this.numbersId = numbersId;
         this.number = number;
         this.description = description;
     }
@@ -14,11 +14,11 @@ public class Number {
 
     }
     public Long getNumbers_id() {
-        return numbers_id;
+        return numbersId;
     }
 
     public void setNumbers_id(Long numbers_id) {
-        this.numbers_id = numbers_id;
+        this.numbersId = numbers_id;
     }
 
     public Long getNumber() {
@@ -40,7 +40,7 @@ public class Number {
     @Override
     public String toString() {
         return "Number{" +
-                "numbers_id=" + numbers_id +
+                "numbersId=" + numbersId +
                 ", number=" + number +
                 ", description='" + description + '\'' +
                 '}';

@@ -6,13 +6,14 @@ import entity.Uslugi;
 import exception.DaoException;
 import utils.ConnectionManager;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class UslugiDao {
+public class UslugiDao implements Dao<Long, Uslugi>{
     public static final UslugiDao INSTANCE = new UslugiDao();
     private static final String deleteSql = """
             DELETE FROM "Uslugi" WHERE uslugi_id = ?
@@ -37,7 +38,7 @@ public class UslugiDao {
             """;
     private UslugiDao() {
     }
-    public static final List<Uslugi> findAll(UserFilter userFilter) {
+    public static List<Uslugi> findAll(UserFilter userFilter) {
         List<Integer> parameters = new ArrayList<>();
         List<Uslugi> uslugiList = new ArrayList<>();
         parameters.add(userFilter.limit());
@@ -62,7 +63,7 @@ public class UslugiDao {
         }
         return uslugiList;
     }
-    public static List<Uslugi> findAll() {
+    public List<Uslugi> findAll() {
         try(var connection = ConnectionManager.get();
             var statement = connection.prepareStatement(findAll)) {
             var res = statement.executeQuery();
@@ -76,7 +77,7 @@ public class UslugiDao {
             throw new DaoException(e);
         }
     }
-    public static Optional<Uslugi> findByid(Long id) {
+    public Optional<Uslugi> findByid(Long id) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(selectSql)) {
             statement.setLong(1, id);
@@ -93,7 +94,7 @@ public class UslugiDao {
             throw new DaoException(e);
         }
     }
-    public static void update(Uslugi uslugi) {
+    public void update(Uslugi uslugi) {
         try (var connection = ConnectionManager.get();
              var preparedStatement = connection.prepareStatement(updateSql)) {
             preparedStatement.setString(1, uslugi.getName_uslugi());
@@ -104,7 +105,7 @@ public class UslugiDao {
             throw new DaoException(e);
         }
     }
-    public static boolean delete(Long id) {
+    public boolean delete(Long id) {
         try(var connection = ConnectionManager.get();
             var preparedStatement = connection.prepareStatement(deleteSql)) {
             preparedStatement.setLong(1, id);
@@ -113,7 +114,7 @@ public class UslugiDao {
             throw new DaoException(e);
         }
     }
-    public static Uslugi save(Uslugi uslugi) {
+    public Uslugi save(Uslugi uslugi) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(saveSql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, uslugi.getName_uslugi());
@@ -124,6 +125,23 @@ public class UslugiDao {
                 uslugi.setUslugi_id(generatedKeys.getLong("uslugi_id"));
             }
             return uslugi;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        }
+    }
+
+    public Optional<Uslugi> findByid(long uslugi_id, Connection connection) {
+        try (var statement = connection.prepareStatement(selectSql)) {
+            statement.setLong(1, uslugi_id);
+            var result = statement.executeQuery();
+            Uslugi uslugi = null;
+            if (result.next()) {
+                uslugi = new Uslugi();
+                uslugi.setUslugi_id(result.getLong("uslugi_id"));
+                uslugi.setName_uslugi(result.getString("name_uslugi"));
+                uslugi.setTarif(result.getLong("tarif"));
+            }
+            return Optional.ofNullable(uslugi);
         } catch (SQLException e) {
             throw new DaoException(e);
         }

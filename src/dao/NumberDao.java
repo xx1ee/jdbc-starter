@@ -6,13 +6,14 @@ import entity.User;
 import exception.DaoException;
 import utils.ConnectionManager;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class NumberDao {
+public class NumberDao implements Dao<Long, Number>{
     public static final NumberDao INSTANCE = new NumberDao();
     private static final String deleteSql = """
             DELETE FROM numbers WHERE numbers_id = ?
@@ -37,7 +38,24 @@ public class NumberDao {
             """;
     private NumberDao() {
     }
-    public static final List<Number> findAll(UserFilter userFilter) {
+
+    public Optional<Number> findByid(Long id, Connection connection) {
+        try (var statement = connection.prepareStatement(selectSql)) {
+            statement.setLong(1, id);
+            var result = statement.executeQuery();
+            Number number = null;
+            if (result.next()) {
+                number = new Number();
+                number.setNumbers_id(result.getLong("numbers_id"));
+                number.setNumber(result.getLong("number"));
+                number.setDescription(result.getString("description"));
+            }
+            return Optional.ofNullable(number);
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        }
+    }
+    public static List<Number> findAll(UserFilter userFilter) {
         List<Integer> parameters = new ArrayList<>();
         List<Number> numberList = new ArrayList<>();
         parameters.add(userFilter.limit());
@@ -62,7 +80,8 @@ public class NumberDao {
         }
         return numberList;
     }
-    public static List<Number> findAll() {
+    @Override
+    public List<Number> findAll() {
         try(var connection = ConnectionManager.get();
             var statement = connection.prepareStatement(findAll)) {
             var res = statement.executeQuery();
@@ -75,7 +94,8 @@ public class NumberDao {
             throw new DaoException(e);
         }
     }
-    public static Optional<Number> findByid(Long id) {
+    @Override
+    public Optional<Number> findByid(Long id) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(selectSql)) {
             statement.setLong(1, id);
@@ -92,7 +112,8 @@ public class NumberDao {
             throw new DaoException(e);
         }
     }
-    public static void update(Number number) {
+    @Override
+    public void update(Number number) {
         try (var connection = ConnectionManager.get();
              var preparedStatement = connection.prepareStatement(updateSql)) {
             preparedStatement.setLong(1, number.getNumber());
@@ -103,7 +124,8 @@ public class NumberDao {
             throw new DaoException(e);
         }
     }
-    public static boolean delete(Long id) {
+    @Override
+    public boolean delete(Long id) {
         try(var connection = ConnectionManager.get();
             var preparedStatement = connection.prepareStatement(deleteSql)) {
             preparedStatement.setLong(1, id);
@@ -112,7 +134,8 @@ public class NumberDao {
             throw new DaoException(e);
         }
     }
-    public static Number save(Number number) {
+    @Override
+    public Number save(Number number) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(saveSql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setLong(1, number.getNumber());

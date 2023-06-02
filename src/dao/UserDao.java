@@ -5,6 +5,7 @@ import entity.User;
 import exception.DaoException;
 import utils.ConnectionManager;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class UserDao {
+public class UserDao implements Dao<Long, User>{
     public static final UserDao INSTANCE = new UserDao();
     private static final String deleteSql = """
             DELETE FROM users WHERE user_id = ?
@@ -61,7 +62,7 @@ public class UserDao {
         }
         return userList;
     }
-    public static List<User> findAll() {
+    public List<User> findAll() {
         try(var connection = ConnectionManager.get();
         var statement = connection.prepareStatement(findAll)) {
             var res = statement.executeQuery();
@@ -74,7 +75,23 @@ public class UserDao {
             throw new DaoException(e);
         }
     }
-    public static Optional<User> findByid(Long id) {
+    public Optional<User> findByid(Long id, Connection connection) {
+        try (var statement = connection.prepareStatement(selectSql)) {
+            statement.setLong(1, id);
+            var result = statement.executeQuery();
+            User user = null;
+            if (result.next()) {
+                user = new User();
+                user.setUserId(result.getLong("user_id"));
+                user.setFio(result.getString("fio"));
+                user.setPol(result.getString("pol"));
+            }
+            return Optional.ofNullable(user);
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        }
+    }
+    public Optional<User> findByid(Long id) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(selectSql)) {
             statement.setLong(1, id);
@@ -91,7 +108,7 @@ public class UserDao {
             throw new DaoException(e);
         }
     }
-    public static void update(User user) {
+    public void update(User user) {
         try (var connection = ConnectionManager.get();
         var preparedStatement = connection.prepareStatement(updateSql)) {
             preparedStatement.setString(1, user.getFio());
@@ -102,7 +119,7 @@ public class UserDao {
             throw new DaoException(e);
         }
     }
-    public static boolean delete(Long id) {
+    public boolean delete(Long id) {
         try(var connection = ConnectionManager.get();
         var preparedStatement = connection.prepareStatement(deleteSql)) {
             preparedStatement.setLong(1, id);
@@ -111,7 +128,7 @@ public class UserDao {
             throw new DaoException(e);
         }
     }
-    public static User save(User user) {
+    public User save(User user) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(saveSql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, user.getFio());
