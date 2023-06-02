@@ -1,7 +1,8 @@
 package dao;
 
 import dto.UserFilter;
-import entity.User;
+import entity.Number;
+import entity.Uslugi;
 import exception.DaoException;
 import utils.ConnectionManager;
 
@@ -9,37 +10,36 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
-public class UserDao {
-    public static final UserDao INSTANCE = new UserDao();
+public class UslugiDao {
+    public static final UslugiDao INSTANCE = new UslugiDao();
     private static final String deleteSql = """
-            DELETE FROM users WHERE user_id = ?
+            DELETE FROM "Uslugi" WHERE uslugi_id = ?
             """;
     private static final String saveSql = """
-                INSERT INTO users(fio, pol)
+                INSERT INTO "Uslugi"(name_uslugi, tarif)
                 VALUES (?, ?)
                 """;
     private static final String updateSql = """
-            UPDATE users
-            SET fio = ?,
-            pol = ?
-            WHERE user_id = ?
+            UPDATE "Uslugi"
+            SET name_uslugi = ?,
+            tarif = ?
+            WHERE uslugi_id = ?
             """;
     private static final String findAll = """
-            SELECT user_id,fio,pol
-            FROM users
+            SELECT uslugi_id,name_uslugi,tarif
+            FROM "Uslugi"
             """;
     private static final String selectSql = findAll +
-                """
-                WHERE user_id = ?
-                """;
-    private UserDao() {
+            """
+            WHERE uslugi_id = ?
+            """;
+    private UslugiDao() {
     }
-    public static final List<User> findAll(UserFilter userFilter) {
+    public static final List<Uslugi> findAll(UserFilter userFilter) {
         List<Integer> parameters = new ArrayList<>();
-        List<User> userList = new ArrayList<>();
+        List<Uslugi> uslugiList = new ArrayList<>();
         parameters.add(userFilter.limit());
         parameters.add(userFilter.offset());
         var sql = findAll + """
@@ -47,56 +47,58 @@ public class UserDao {
                 OFFSET ?
                 """;
         try (var connection = ConnectionManager.get();
-            var preparedStatement = connection.prepareStatement(sql)) {
+             var preparedStatement = connection.prepareStatement(sql)) {
             for (int i = 0; i < parameters.size(); i++) {
                 preparedStatement.setLong(i + 1, parameters.get(i));
                 preparedStatement.setLong(i + 1, parameters.get(i));
             }
             var result = preparedStatement.executeQuery();
             while (result.next()) {
-                userList.add(new User(result.getLong("user_id"), result.getString("fio"), result.getString("pol")));
+                uslugiList.add(new Uslugi(result.getLong("uslugi_id"), result.getString("name_uslugi"), result.getLong("tarif")));
+
             }
         } catch (SQLException e) {
             throw new DaoException(e);
         }
-        return userList;
+        return uslugiList;
     }
-    public static List<User> findAll() {
+    public static List<Uslugi> findAll() {
         try(var connection = ConnectionManager.get();
-        var statement = connection.prepareStatement(findAll)) {
+            var statement = connection.prepareStatement(findAll)) {
             var res = statement.executeQuery();
-            List<User> userList = new ArrayList<>();
+            List<Uslugi> uslugiList = new ArrayList<>();
             while (res.next()) {
-                userList.add(new User(res.getLong("user_id"), res.getString("fio"), res.getString("pol")));
+                uslugiList.add(new Uslugi(res.getLong("uslugi_id"), res.getString("name_uslugi"), res.getLong("tarif")));
+
             }
-            return userList;
+            return uslugiList;
         } catch (SQLException e) {
             throw new DaoException(e);
         }
     }
-    public static Optional<User> findByid(Long id) {
+    public static Optional<Uslugi> findByid(Long id) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(selectSql)) {
             statement.setLong(1, id);
             var result = statement.executeQuery();
-            User user = null;
+            Uslugi uslugi = null;
             if (result.next()) {
-                user = new User();
-                user.setUserId(result.getLong("user_id"));
-                user.setFio(result.getString("fio"));
-                user.setPol(result.getString("pol"));
+                uslugi = new Uslugi();
+                uslugi.setUslugi_id(result.getLong("uslugi_id"));
+                uslugi.setName_uslugi(result.getString("name_uslugi"));
+                uslugi.setTarif(result.getLong("tarif"));
             }
-            return Optional.ofNullable(user);
+            return Optional.ofNullable(uslugi);
         } catch (SQLException e) {
             throw new DaoException(e);
         }
     }
-    public static void update(User user) {
+    public static void update(Uslugi uslugi) {
         try (var connection = ConnectionManager.get();
-        var preparedStatement = connection.prepareStatement(updateSql)) {
-            preparedStatement.setString(1, user.getFio());
-            preparedStatement.setString(2, user.getPol());
-            preparedStatement.setLong(3, user.getUserId());
+             var preparedStatement = connection.prepareStatement(updateSql)) {
+            preparedStatement.setString(1, uslugi.getName_uslugi());
+            preparedStatement.setLong(2, uslugi.getTarif());
+            preparedStatement.setLong(3, uslugi.getUslugi_id());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DaoException(e);
@@ -104,29 +106,29 @@ public class UserDao {
     }
     public static boolean delete(Long id) {
         try(var connection = ConnectionManager.get();
-        var preparedStatement = connection.prepareStatement(deleteSql)) {
+            var preparedStatement = connection.prepareStatement(deleteSql)) {
             preparedStatement.setLong(1, id);
             return preparedStatement.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new DaoException(e);
         }
     }
-    public static User save(User user) {
+    public static Uslugi save(Uslugi uslugi) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(saveSql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, user.getFio());
-            statement.setString(2, user.getPol());
+            statement.setString(1, uslugi.getName_uslugi());
+            statement.setLong(2, uslugi.getTarif());
             statement.executeUpdate();
             var generatedKeys = statement.getGeneratedKeys();
             if (generatedKeys.next()) {
-                user.setUserId(generatedKeys.getLong("user_id"));
+                uslugi.setUslugi_id(generatedKeys.getLong("uslugi_id"));
             }
-            return user;
+            return uslugi;
         } catch (SQLException e) {
             throw new DaoException(e);
         }
     }
-    public static UserDao getInstance() {
+    public static UslugiDao getInstance() {
         return INSTANCE;
     }
 }
