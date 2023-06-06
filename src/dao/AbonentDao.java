@@ -24,12 +24,14 @@ public class AbonentDao implements Dao<Long, Abonent>{
                 """;
     private static final String updateSql = """
             UPDATE abonent
-            SET number_id = ?,
+            SET
             "check" = ?,
             minutes = ?,
             switch = ?,
-            user_id = ?
             WHERE abonent_id = ?
+            """;
+    public static final String replaceNumber = """
+            SELECT * FROM replace_number(?,?)
             """;
     private static final String findAll = """
             SELECT abonent_id, number_id, "check", minutes, switch, user_id
@@ -47,6 +49,17 @@ public class AbonentDao implements Dao<Long, Abonent>{
         return INSTANCE;
     }
 
+    public void replaceNumber(Long num, Long id) {
+        try (var connection = ConnectionManager.get();
+             var preparedStatement = connection.prepareStatement(replaceNumber)) {
+            preparedStatement.setLong(1, num);
+            preparedStatement.setLong(2, id);
+            System.out.println(preparedStatement.executeUpdate() > 0);
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        }
+    }
+
     @Override
     public Abonent save(Abonent obj) {
         try (var connection = ConnectionManager.get();
@@ -56,7 +69,7 @@ public class AbonentDao implements Dao<Long, Abonent>{
             preparedStatement.setLong(3, obj.getMinutes());
             preparedStatement.setString(4, obj.getSwitchO());
             preparedStatement.setLong(5, obj.getAbonentId());
-            preparedStatement.executeUpdate();
+            System.out.println(preparedStatement.executeUpdate() > 0);
             var generatedKeys = preparedStatement.getGeneratedKeys();
             if (generatedKeys.next()) {
                 obj.setAbonentId(generatedKeys.getLong("abonent_id"));
@@ -98,11 +111,10 @@ public class AbonentDao implements Dao<Long, Abonent>{
     public void update(Abonent obj) {
         try (var connection = ConnectionManager.get();
              var preparedStatement = connection.prepareStatement(updateSql)) {
-            preparedStatement.setLong(1, obj.getNumber().getNumbers_id());
-            preparedStatement.setLong(2, obj.getCheck());
-            preparedStatement.setLong(3, obj.getMinutes());
-            preparedStatement.setString(4, obj.getSwitchO());
-            preparedStatement.setLong(5, obj.getAbonentId());
+            preparedStatement.setLong(1, obj.getCheck());
+            preparedStatement.setLong(2, obj.getMinutes());
+            preparedStatement.setString(3, obj.getSwitchO());
+            preparedStatement.setLong(4, obj.getAbonentId());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DaoException(e);

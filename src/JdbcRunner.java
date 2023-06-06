@@ -10,8 +10,7 @@ import java.util.Scanner;
 public class JdbcRunner {
     public static void main(String[] args) {
         try {
-
-
+            DaoRunner.run();
         } finally {
             ConnectionManager.closePool();
         }

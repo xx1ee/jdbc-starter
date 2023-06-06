@@ -1,5 +1,8 @@
 package utils;
 
+import exception.AuthorizeException;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -13,7 +16,7 @@ import java.util.concurrent.BlockingQueue;
 
 public final class ConnectionManager {
     private static final String URL_KEY = "db.url";
-    private static final String USERNAME_KEY = "db.username";
+    private static String USERNAME_KEY = "db.username";
     private static final String PASSWORD_KEY = "db.password";
     private static BlockingQueue<Connection> POOL;
     private static List<Connection> sourceConnections;
@@ -27,7 +30,8 @@ public final class ConnectionManager {
         }
     }
 
-    private ConnectionManager() {
+    private ConnectionManager(String name, String pass) {
+
     }
     public static Connection get() {
         try {

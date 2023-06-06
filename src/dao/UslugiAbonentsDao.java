@@ -9,17 +9,22 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class UslugiAbonentsDao implements Dao<Long, UslugiAbonents>{
     private static final UslugiAbonentsDao INSTANCE = new UslugiAbonentsDao();
 
     private static final String deleteSql = """
-            DELETE FROM uslugi_abonents WHERE id = ?
+            IF (SELECT switch = 'on' from abonent where abonent_id = idd) THEN
+                DELETE FROM uslugi_abonents WHERE abonent_id = ? AND uslugi_id = ?;
+            """;
+    private static final String deleteSqlAdmin = """
+            DELETE FROM uslugi_abonents WHERE id = ?;
             """;
     private static final String saveSql = """
-                INSERT INTO uslugi_abonents(uslugi_id, abonent_id)
-                VALUES (?, ?)
+            IF (SELECT switch = 'on' from abonent where abonent_id = ?) THEN
+                insert into uslugi_abonents(uslugi_id, abonent_id) values (?, ?);
                 """;
     private static final String updateSql = """
             UPDATE uslugi_abonents
@@ -47,8 +52,9 @@ public class UslugiAbonentsDao implements Dao<Long, UslugiAbonents>{
     public UslugiAbonents save(UslugiAbonents obj) {
         try (var connection = ConnectionManager.get();
              var statement = connection.prepareStatement(saveSql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setLong(1, obj.getUslugi().getUslugi_id());
-            statement.setLong(2, obj.getAbonent().getAbonentId());
+            statement.setLong(1, obj.getAbonent().getAbonentId());
+            statement.setLong(2, obj.getUslugi().getUslugi_id());
+            statement.setLong(3, obj.getAbonent().getAbonentId());
             statement.executeUpdate();
             var generatedKeys = statement.getGeneratedKeys();
             if (generatedKeys.next()) {
@@ -80,8 +86,18 @@ public class UslugiAbonentsDao implements Dao<Long, UslugiAbonents>{
     @Override
     public boolean delete(Long id) {
         try(var connection = ConnectionManager.get();
-            var preparedStatement = connection.prepareStatement(deleteSql)) {
+            var preparedStatement = connection.prepareStatement(deleteSqlAdmin)) {
             preparedStatement.setLong(1, id);
+            return preparedStatement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        }
+    }
+    public boolean delete(Long id_a, Long id_u) {
+        try(var connection = ConnectionManager.get();
+            var preparedStatement = connection.prepareStatement(deleteSql)) {
+            preparedStatement.setLong(1, id_a);
+            preparedStatement.setLong(2, id_u);
             return preparedStatement.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new DaoException(e);
